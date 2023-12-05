@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.views import index
+from core.views import index, twilio_webhook
 
 urlpatterns = [
     path(
@@ -8,4 +8,5 @@ urlpatterns = [
         index,
         name="index",
     ),
+    path("twilio_webhook", twilio_webhook, name="twilio_webhook"),
 ]
