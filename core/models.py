@@ -17,7 +17,8 @@ class Game(models.Model):
 
 
 class Caller(models.Model):
-    phone_number = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=255, null=True, blank=True)
+    current_call_sid = models.CharField(max_length=255, null=True, blank=True)
 
     CALLER_STATE = [("hungup", "hungup"), ("ingame", "ingame")]
     state = models.CharField(max_length=255, choices=CALLER_STATE)
