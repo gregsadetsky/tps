@@ -22,3 +22,6 @@ class Caller(models.Model):
     CALLER_STATE = [("hungup", "hungup"), ("ingame", "ingame")]
     state = models.CharField(max_length=255, choices=CALLER_STATE)
     game = models.ForeignKey(Game, on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        return self.phone_number
