@@ -127,7 +127,7 @@ def twilio_handle_game(request):
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Say>please play</Say>
+                <Say>please say rock, papers or scissors</Say>
                 <Record timeout="2" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
@@ -141,7 +141,7 @@ def twilio_handle_game(request):
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Say>we didn't quite hear that, please say rock papers or scissors</Say>
+                <Say>we didn't quite hear that, please say rock, papers or scissors</Say>
                 <Record timeout="2" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
@@ -197,7 +197,6 @@ def handle_ringing(request):
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Say>you are now about to play with another user</Say>
                 <Redirect method="POST">{reverse("twilio_handle_game")}</Redirect>
             </Response>""".encode(
                 "utf-8"
@@ -211,7 +210,7 @@ def handle_ringing(request):
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
         <Response>
-            <Say>you are now in waiting state</Say>
+            <Say>please wait for another player</Say>
             <Play loop="100">{HOLD_MUSIC}</Play>
         </Response>""".encode(
             "utf-8"
