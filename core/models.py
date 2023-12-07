@@ -26,6 +26,9 @@ class Round(models.Model):
     last_player_1_move = models.CharField(max_length=255, null=True, blank=True)
     last_player_2_move = models.CharField(max_length=255, null=True, blank=True)
 
+    player1_recording_url = models.CharField(max_length=255, null=True, blank=True)
+    player2_recording_url = models.CharField(max_length=255, null=True, blank=True)
+
     STATUS_ENUM = [
         ("unknown", "unknown"),
         ("tie", "tie"),
@@ -35,6 +38,24 @@ class Round(models.Model):
     winner = models.ForeignKey(
         "Caller", on_delete=models.PROTECT, null=True, blank=True
     )
+
+    def get_recording_url_for_other_player(self, player):
+        if player == self.player1:
+            return self.player2_recording_url
+        elif player == self.player2:
+            return self.player1_recording_url
+        else:
+            raise Exception("invalid player")
+
+    def store_recording_url_for_this_player(self, player, recording_url):
+        if player == self.player1:
+            self.player1_recording_url = recording_url
+        elif player == self.player2:
+            self.player2_recording_url = recording_url
+        else:
+            raise Exception("invalid player")
+
+        self.save()
 
     def get_move_for_this_and_other_player(self, player):
         # return tuple of this player, and other player's move

@@ -35,11 +35,14 @@ def twilio_handle_round_result(request):
         else:
             verbal_output = "you lost! not amazing"
 
+    other_player_recording_url = current_round.get_recording_url_for_other_player(user)
+
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
     <Response>
         <Say>you played {played_moves[0]}</Say>
-        <Say>they played {played_moves[1]}</Say>
+        <Say>they played</Say>
+        <Play>{other_player_recording_url}</Play>
         <Say>{verbal_output}</Say>
     </Response>""".encode(
             "utf-8"
@@ -80,6 +83,8 @@ def twilio_handle_recording(request):
 
     current_round = user.get_current_round()
     assert current_round is not None
+
+    current_round.store_recording_url_for_this_player(user, recording_url)
 
     if transcription == "rock":
         current_round.set_move_for_player(user, "rock")
@@ -128,7 +133,7 @@ def twilio_handle_game(request):
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Say>please say rock, papers or scissors</Say>
-                <Record timeout="2" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
+                <Record timeout="2" maxLength="3" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
                 "utf-8"
@@ -142,7 +147,7 @@ def twilio_handle_game(request):
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Say>we didn't quite hear that, please say rock, papers or scissors</Say>
-                <Record timeout="2" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
+                <Record timeout="2" maxLength="3" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
                 "utf-8"
