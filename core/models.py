@@ -40,45 +40,44 @@ class Round(models.Model):
         "CallSession", on_delete=models.PROTECT, null=True, blank=True
     )
 
-    def get_recording_url_for_other_player(self, player):
-        if player == self.player1_session:
+    def get_recording_url_for_other_player(self, player_session):
+        if player_session == self.player1_session:
             return self.player2_recording_url
-        elif player == self.player2_session:
+        elif player_session == self.player2_session:
             return self.player1_recording_url
         else:
-            raise Exception("invalid player")
+            raise Exception("invalid player session")
 
-    def store_recording_url_for_this_player(self, player, recording_url):
-        if player == self.player1_session:
+    def store_recording_url_for_this_player(self, player_session, recording_url):
+        if player_session == self.player1_session:
             self.player1_recording_url = recording_url
-        elif player == self.player2_session:
+        elif player_session == self.player2_session:
             self.player2_recording_url = recording_url
         else:
-            raise Exception("invalid player")
+            raise Exception("invalid player session")
         self.save()
 
-    def get_move_for_this_and_other_player(self, player):
-        # return tuple of this player, and other player's move
-        if player == self.player1_session:
-            return self.player1_move, self.player2_move
-        elif player == self.player2_session:
-            return self.player2_move, self.player1_move
+    def get_move_for_this_player(self, player_session):
+        if player_session == self.player1_session:
+            return self.player1_move
+        elif player_session == self.player2_session:
+            return self.player2_move
 
-    def has_other_player_played(self, player):
-        if player == self.player1_session:
+    def has_other_player_played(self, player_session):
+        if player_session == self.player1_session:
             return bool(self.player2_move)
-        elif player == self.player2_session:
+        elif player_session == self.player2_session:
             return bool(self.player1_move)
         else:
-            raise Exception("invalid player")
+            raise Exception("invalid player session")
 
-    def set_move_for_player(self, player, move):
-        if player == self.player1_session:
+    def set_move_for_player(self, player_session, move):
+        if player_session == self.player1_session:
             self.player1_move = move
-        elif player == self.player2_session:
+        elif player_session == self.player2_session:
             self.player2_move = move
         else:
-            raise Exception("invalid player")
+            raise Exception("invalid player session")
         self.save()
 
 

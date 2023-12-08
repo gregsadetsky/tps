@@ -32,9 +32,7 @@ def twilio_handle_round_result(request):
     current_round = request.call_session.get_latest_round()
     assert current_round is not None
 
-    played_moves = current_round.get_move_for_this_and_other_player(
-        request.call_session
-    )
+    current_player_move = current_round.get_move_for_this_player(request.call_session)
 
     verbal_output = ""
     if current_round.status == "tie":
@@ -52,7 +50,7 @@ def twilio_handle_round_result(request):
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
     <Response>
-        <Say>you played {played_moves[0]}</Say>
+        <Say>you played {current_player_move}</Say>
         <Say>they played</Say>
         <Play>{other_player_recording_url}</Play>
         <Say>{verbal_output}</Say>
@@ -233,7 +231,8 @@ def handle_ringing(request):
 
         # create round
         Round.objects.create(
-            player1_session=request.call_session, player2=found_other_waiting_user
+            player1_session=request.call_session,
+            player2_session=found_other_waiting_user,
         )
 
         return HttpResponse(
