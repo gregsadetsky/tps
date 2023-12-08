@@ -1,4 +1,6 @@
-from core.models import CallSession
+import hashlib
+
+from core.models import CallerPerson, CallSession
 
 
 def add_call_session_to_request(get_response):
@@ -13,6 +15,18 @@ def add_call_session_to_request(get_response):
                 call_sid=request.POST["CallSid"],
             )
             request.call_session = call_session
+
+            # we are (mostly always) given the CallSid, but not always
+            # given the From. update the person object when we can
+            if request.POST.get("From"):
+                caller_person, _ = CallerPerson.objects.get_or_create(
+                    phone_number_sha1=hashlib.sha1(
+                        request.POST["From"].encode("utf-8")
+                    ).hexdigest()
+                )
+                call_session.caller_person = caller_person
+                call_session.save()
+
         response = get_response(request)
 
         # Code to be executed for each request/response after

@@ -12,6 +12,9 @@ class TranscriptionLogs(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     transcript = models.TextField()
 
+    def __str__(self):
+        return self.transcript
+
 
 class Round(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -80,12 +83,18 @@ class Round(models.Model):
             raise Exception("invalid player session")
         self.save()
 
+    def __str__(self):
+        return f"round - player1: {self.player1_move}, player2: {self.player2_move}"
+
 
 class CallSession(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     call_sid = models.CharField(max_length=255, null=True, blank=True)
+    caller_person = models.ForeignKey(
+        "CallerPerson", on_delete=models.PROTECT, null=True, blank=True
+    )
 
     SESSION_STATE = [
         ("hungup", "hungup"),
@@ -104,7 +113,17 @@ class CallSession(models.Model):
         )
 
     def __str__(self):
-        return self.call_sid
+        return f"call_sid: {self.call_sid}"
+
+
+class CallerPerson(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    phone_number_sha1 = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"phone sha: {self.phone_number_sha1}"
 
 
 class TwilioLog(models.Model):

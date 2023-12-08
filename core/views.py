@@ -12,6 +12,7 @@ from .utils_logging import log_twilio_payload
 from .utils_server_url import get_server_url
 from .utils_speechrec import transcribe_rps_from_url
 from .utils_twilio import interrupt_call_and_redirect_them_to_url
+from .utils_wins_losses import generate_welcome_say_twiml_for_call_session
 
 HOLD_MUSIC = "http://com.twilio.music.guitars.s3.amazonaws.com/Pitx_-_Long_Winter.mp3"
 AUTHORS = [
@@ -75,7 +76,6 @@ def compute_and_save_round_winner(round):
         round.winner_session = round.player2_session
     elif player1_rps == (player2_rps + 1) % 3:
         round.winner_session = round.player1_session
-        return
     else:
         raise Exception("please never happen")
     round.save()
@@ -197,17 +197,17 @@ def handle_ringing(request):
     # otherwise, put this user in waiting state
     # and ... say/play music..??
 
-    found_other_waiting_user = (
+    other_waiting_call_session = (
         CallSession.objects.exclude(id=request.call_session.id)
         .filter(state="waiting_for_other_player")
         .order_by("?")
         .first()
     )
 
-    if found_other_waiting_user:
+    if other_waiting_call_session:
         try:
             interrupt_call_and_redirect_them_to_url(
-                call_sid=found_other_waiting_user.call_sid,
+                call_sid=other_waiting_call_session.call_sid,
                 redirect_url=f'{get_server_url()}{reverse("twilio_handle_game")}',
             )
         except:
@@ -226,18 +226,19 @@ def handle_ringing(request):
         request.call_session.state = "started_game"
         request.call_session.save()
 
-        found_other_waiting_user.state = "started_game"
-        found_other_waiting_user.save()
+        other_waiting_call_session.state = "started_game"
+        other_waiting_call_session.save()
 
         # create round
         Round.objects.create(
             player1_session=request.call_session,
-            player2_session=found_other_waiting_user,
+            player2_session=other_waiting_call_session,
         )
 
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
+                {generate_welcome_say_twiml_for_call_session(other_waiting_call_session)}
                 <Redirect method="POST">{reverse("twilio_handle_game")}</Redirect>
             </Response>""".encode(
                 "utf-8"
@@ -251,6 +252,7 @@ def handle_ringing(request):
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
         <Response>
+            {generate_welcome_say_twiml_for_call_session(request.call_session)}
             <Say>please wait for another player</Say>
             <Play loop="100">{HOLD_MUSIC}</Play>
         </Response>""".encode(
