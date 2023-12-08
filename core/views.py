@@ -29,8 +29,9 @@ def index(request):
 @csrf_exempt
 @log_twilio_payload
 def twilio_handle_round_result(request):
-    current_round = request.call_session.get_current_round()
+    current_round = request.call_session.get_latest_round()
     assert current_round is not None
+
     played_moves = current_round.get_move_for_this_and_other_player(
         request.call_session
     )
@@ -40,7 +41,7 @@ def twilio_handle_round_result(request):
         verbal_output = "it was a tie! good job."
     else:
         if current_round.winner_session == request.call_session:
-            verbal_output = "you won! youu're amazing."
+            verbal_output = "you won! you're amazing."
         else:
             verbal_output = "you lost! I'm sorry."
 
@@ -88,7 +89,7 @@ def twilio_handle_recording(request):
     recording_url = request.POST["RecordingUrl"]
     transcription = transcribe_rps_from_url(recording_url)
 
-    current_round = request.call_session.get_current_round()
+    current_round = request.call_session.get_latest_round()
     assert current_round is not None
 
     current_round.store_recording_url_for_this_player(

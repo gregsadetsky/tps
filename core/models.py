@@ -83,6 +83,7 @@ class Round(models.Model):
 
 
 class CallSession(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     call_sid = models.CharField(max_length=255, null=True, blank=True)
@@ -96,7 +97,7 @@ class CallSession(models.Model):
     ]
     state = models.CharField(max_length=255, choices=SESSION_STATE)
 
-    def get_current_round(self):
+    def get_latest_round(self):
         return (
             Round.objects.filter(Q(player1_session=self) | Q(player2_session=self))
             .order_by("-created")
