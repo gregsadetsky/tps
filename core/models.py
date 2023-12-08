@@ -18,13 +18,13 @@ class Round(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     player1 = models.ForeignKey(
-        "Caller", on_delete=models.PROTECT, related_name="player1"
+        "CallSession", on_delete=models.PROTECT, related_name="player1"
     )
     player2 = models.ForeignKey(
-        "Caller", on_delete=models.PROTECT, related_name="player2"
+        "CallSession", on_delete=models.PROTECT, related_name="player2"
     )
-    last_player_1_move = models.CharField(max_length=255, null=True, blank=True)
-    last_player_2_move = models.CharField(max_length=255, null=True, blank=True)
+    player_1_move = models.CharField(max_length=255, null=True, blank=True)
+    player_2_move = models.CharField(max_length=255, null=True, blank=True)
 
     player1_recording_url = models.CharField(max_length=255, null=True, blank=True)
     player2_recording_url = models.CharField(max_length=255, null=True, blank=True)
@@ -36,7 +36,7 @@ class Round(models.Model):
     ]
     status = models.CharField(max_length=255, choices=STATUS_ENUM, default="unknown")
     winner = models.ForeignKey(
-        "Caller", on_delete=models.PROTECT, null=True, blank=True
+        "CallSession", on_delete=models.PROTECT, null=True, blank=True
     )
 
     def get_recording_url_for_other_player(self, player):
@@ -54,48 +54,46 @@ class Round(models.Model):
             self.player2_recording_url = recording_url
         else:
             raise Exception("invalid player")
-
         self.save()
 
     def get_move_for_this_and_other_player(self, player):
         # return tuple of this player, and other player's move
         if player == self.player1:
-            return self.last_player_1_move, self.last_player_2_move
+            return self.player_1_move, self.player_2_move
         elif player == self.player2:
-            return self.last_player_2_move, self.last_player_1_move
+            return self.player_2_move, self.player_1_move
 
     def has_other_player_played(self, player):
         if player == self.player1:
-            return bool(self.last_player_2_move)
+            return bool(self.player_2_move)
         elif player == self.player2:
-            return bool(self.last_player_1_move)
+            return bool(self.player_1_move)
         else:
             raise Exception("invalid player")
 
     def set_move_for_player(self, player, move):
         if player == self.player1:
-            self.last_player_1_move = move
+            self.player_1_move = move
         elif player == self.player2:
-            self.last_player_2_move = move
+            self.player_2_move = move
         else:
             raise Exception("invalid player")
-
         self.save()
 
 
-class Caller(models.Model):
+class CallSession(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
-    current_call_sid = models.CharField(max_length=255, null=True, blank=True)
+    call_sid = models.CharField(max_length=255, null=True, blank=True)
 
-    CALLER_STATE = [
+    SESSION_STATE = [
         ("hungup", "hungup"),
         ("waiting_for_other_player", "waiting_for_other_player"),
         ("started_game", "started_game"),
         ("rerecording", "rerecording"),
         ("waiting_for_transcript", "waiting_for_transcript"),
     ]
-    state = models.CharField(max_length=255, choices=CALLER_STATE)
+    state = models.CharField(max_length=255, choices=SESSION_STATE)
 
     def get_current_round(self):
         return (
@@ -105,9 +103,11 @@ class Caller(models.Model):
         )
 
     def __str__(self):
-        return self.current_call_sid
+        return self.call_sid
 
 
 class TwilioLog(models.Model):
     created = models.DateTimeField(auto_now_add=True)
-    post_blob = models.JSONField()
+
+    view_function = models.CharField(max_length=255)
+    payload = models.JSONField()

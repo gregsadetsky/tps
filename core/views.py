@@ -1,41 +1,52 @@
+import random
+
 from django.conf import settings
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from core.models import Caller, Round, TwilioLog
+from core.models import CallSession, Round
 
+from .utils_logging import log_twilio_payload
+from .utils_server_url import get_server_url
 from .utils_speechrec import transcribe_rps_from_url
 from .utils_twilio import interrupt_call_and_redirect_them_to_url
 
 HOLD_MUSIC = "http://com.twilio.music.guitars.s3.amazonaws.com/Pitx_-_Long_Winter.mp3"
+AUTHORS = [
+    '<a href="https://eieio.games/">Nolen Royalty</a>',
+    '<a href="https://greg.technology/">Greg Technology</a>',
+]
 
 
-def _get_user_from_request(request):
-    caller, _ = Caller.objects.get_or_create(
-        current_call_sid=request.POST["CallSid"],
-    )
-    return caller
+def index(request):
+    shuffled_authors = AUTHORS.copy()
+    random.shuffle(shuffled_authors)
+    return render(request, "core/index.html", {"authors": shuffled_authors})
 
 
 @csrf_exempt
+@log_twilio_payload
 def twilio_handle_round_result(request):
-    user = _get_user_from_request(request)
-
-    current_round = user.get_current_round()
+    current_round = request.call_session.get_current_round()
     assert current_round is not None
-    played_moves = current_round.get_move_for_this_and_other_player(user)
+    played_moves = current_round.get_move_for_this_and_other_player(
+        request.call_session
+    )
 
     verbal_output = ""
     if current_round.status == "tie":
-        verbal_output = "it was a tie! amazing"
+        verbal_output = "it was a tie! good job."
     else:
-        if current_round.winner == user:
-            verbal_output = "you won! amazing"
+        if current_round.winner == request.call_session:
+            verbal_output = "you won! youu're amazing."
         else:
-            verbal_output = "you lost! not amazing"
+            verbal_output = "you lost! I'm sorry."
 
-    other_player_recording_url = current_round.get_recording_url_for_other_player(user)
+    other_player_recording_url = current_round.get_recording_url_for_other_player(
+        request.call_session
+    )
 
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -50,84 +61,95 @@ def twilio_handle_round_result(request):
     )
 
 
-def compute_round_winner(round):
-    if round.last_player_1_move == round.last_player_2_move:
+def compute_and_save_round_winner(round):
+    if round.player_1_move == round.player_2_move:
         round.status = "tie"
         round.save()
         return
 
     RPS = ["rock", "paper", "scissors"]
-    player1_rps = RPS.index(round.last_player_1_move)
-    player2_rps = RPS.index(round.last_player_2_move)
+    player1_rps = RPS.index(round.player_1_move)
+    player2_rps = RPS.index(round.player_2_move)
 
+    round.status = "won"
     if player2_rps == (player1_rps + 1) % 3:
-        round.status = "won"
         round.winner = round.player2
-        round.save()
-        return
     elif player1_rps == (player2_rps + 1) % 3:
-        round.status = "won"
         round.winner = round.player1
-        round.save()
         return
     else:
         raise Exception("please never happen")
+    round.save()
 
 
 @csrf_exempt
+@log_twilio_payload
 def twilio_handle_recording(request):
-    user = _get_user_from_request(request)
-
     recording_url = request.POST["RecordingUrl"]
     transcription = transcribe_rps_from_url(recording_url)
 
-    current_round = user.get_current_round()
+    current_round = request.call_session.get_current_round()
     assert current_round is not None
 
-    current_round.store_recording_url_for_this_player(user, recording_url)
+    current_round.store_recording_url_for_this_player(
+        request.call_session, recording_url
+    )
 
     if transcription == "rock":
-        current_round.set_move_for_player(user, "rock")
+        current_round.set_move_for_player(request.call_session, "rock")
     elif transcription == "paper":
-        current_round.set_move_for_player(user, "paper")
+        current_round.set_move_for_player(request.call_session, "paper")
     elif transcription == "scissors":
-        current_round.set_move_for_player(user, "scissors")
+        current_round.set_move_for_player(request.call_session, "scissors")
     else:
         # we didn't get that, ask the user to record again
-        user.state = "rerecording"
-        user.save()
+        request.call_session.state = "rerecording"
+        request.call_session.save()
 
         # interrupt this user's hold and send them back to twilio_handle_game
-        interrupt_call_and_redirect_them_to_url(
-            call_sid=user.current_call_sid,
-            redirect_url=f'{settings.SERVER_URL}{reverse("twilio_handle_game")}',
-        )
+        try:
+            interrupt_call_and_redirect_them_to_url(
+                call_sid=request.call_session.call_sid,
+                redirect_url=f'{get_server_url()}{reverse("twilio_handle_game")}',
+            )
+        except:
+            # the user hung up while being asked to re-record. too bad.
+            pass
         return HttpResponse(b"ok")
 
-    if current_round.has_other_player_played(user):
+    if current_round.has_other_player_played(request.call_session):
         # 1. determine who won
-        compute_round_winner(current_round)
+        compute_and_save_round_winner(current_round)
 
         # both players have played -- interrupt both users as we know who won
-        interrupt_call_and_redirect_them_to_url(
-            call_sid=current_round.player1.current_call_sid,
-            redirect_url=f'{settings.SERVER_URL}{reverse("twilio_handle_round_result")}',
-        )
-        interrupt_call_and_redirect_them_to_url(
-            call_sid=current_round.player2.current_call_sid,
-            redirect_url=f'{settings.SERVER_URL}{reverse("twilio_handle_round_result")}',
-        )
+
+        try:
+            interrupt_call_and_redirect_them_to_url(
+                call_sid=current_round.player1.call_sid,
+                redirect_url=f'{get_server_url()}{reverse("twilio_handle_round_result")}',
+            )
+        except:
+            # the user hung up. it doesn't matter, they already won/lost.
+            pass
+
+        try:
+            interrupt_call_and_redirect_them_to_url(
+                call_sid=current_round.player2.call_sid,
+                redirect_url=f'{get_server_url()}{reverse("twilio_handle_round_result")}',
+            )
+        except:
+            # the user hung up. it doesn't matter, they already won/lost.
+            pass
 
     return HttpResponse(b"ok")
 
 
 @csrf_exempt
+@log_twilio_payload
 def twilio_handle_game(request):
-    user = _get_user_from_request(request)
-
-    if user.state == "started_game":
-        user.state = "waiting_for_transcript"
-        user.save()
+    if request.call_session.state == "started_game":
+        request.call_session.state = "waiting_for_transcript"
+        request.call_session.save()
 
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -139,9 +161,9 @@ def twilio_handle_game(request):
                 "utf-8"
             )
         )
-    elif user.state == "rerecording":
-        user.state = "waiting_for_transcript"
-        user.save()
+    elif request.call_session.state == "rerecording":
+        request.call_session.state = "waiting_for_transcript"
+        request.call_session.save()
 
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -153,7 +175,7 @@ def twilio_handle_game(request):
                 "utf-8"
             )
         )
-    elif user.state == "waiting_for_transcript":
+    elif request.call_session.state == "waiting_for_transcript":
         # play music forever
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -169,34 +191,48 @@ def twilio_handle_game(request):
     raise Exception()
 
 
+# called by `twilio_webhook` i.e. the dispatcher of ringing+hangup webhook calls
 def handle_ringing(request):
-    user = _get_user_from_request(request)
-
     # we are looking to see if another user is waiting
     # to play -- if so, we'll connect the two users
     # otherwise, put this user in waiting state
     # and ... say/play music..??
 
     found_other_waiting_user = (
-        Caller.objects.exclude(id=user.id)
+        CallSession.objects.exclude(id=request.call_session.id)
         .filter(state="waiting_for_other_player")
         .order_by("?")
         .first()
     )
 
     if found_other_waiting_user:
-        user.state = "started_game"
-        user.save()
+        try:
+            interrupt_call_and_redirect_them_to_url(
+                call_sid=found_other_waiting_user.call_sid,
+                redirect_url=f'{get_server_url()}{reverse("twilio_handle_game")}',
+            )
+        except:
+            # interrupting the other caller failed, assume
+            # that this because they hung up. abort.
+            return HttpResponse(
+                b"""<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Say>the other player hung up, goodbye</Say>
+                <Hangup/>
+            </Response>"""
+            )
+
+        # we assume that we interrupted the other player successfully, continue
+
+        request.call_session.state = "started_game"
+        request.call_session.save()
 
         found_other_waiting_user.state = "started_game"
         found_other_waiting_user.save()
 
         # create round
-        Round.objects.create(player1=user, player2=found_other_waiting_user)
-
-        interrupt_call_and_redirect_them_to_url(
-            call_sid=found_other_waiting_user.current_call_sid,
-            redirect_url=f'{settings.SERVER_URL}{reverse("twilio_handle_game")}',
+        Round.objects.create(
+            player1=request.call_session, player2=found_other_waiting_user
         )
 
         return HttpResponse(
@@ -209,8 +245,8 @@ def handle_ringing(request):
         )
 
     # otherwise, put this user in waiting state
-    user.state = "waiting_for_other_player"
-    user.save()
+    request.call_session.state = "waiting_for_other_player"
+    request.call_session.save()
 
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -223,19 +259,17 @@ def handle_ringing(request):
     )
 
 
+# called by `twilio_webhook` i.e. the dispatcher of ringing+hangup webhook calls
 def handle_hangup(request):
-    user = _get_user_from_request(request)
-
-    user.state = "hungup"
-    user.save()
+    request.call_session.state = "hungup"
+    request.call_session.save()
 
     return HttpResponse(b"ok")
 
 
 @csrf_exempt
+@log_twilio_payload
 def twilio_webhook(request):
-    TwilioLog.objects.create(post_blob=request.POST)
-
     assert request.POST.get("CallStatus")
     call_status = request.POST["CallStatus"]
 

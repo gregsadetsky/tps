@@ -23,6 +23,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 
+INTERNAL_IPS = ["127.0.0.1"]
 
 # Application definition
 
@@ -45,6 +46,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.add_call_session_to_request",
 ]
 
 ROOT_URLCONF = "tps.urls"

@@ -1,6 +1,8 @@
 from django.urls import path
+from django.views.generic import TemplateView
 
 from core.views import (
+    index,
     twilio_handle_game,
     twilio_handle_recording,
     twilio_handle_round_result,
@@ -8,6 +10,7 @@ from core.views import (
 )
 
 urlpatterns = [
+    path("", index, name="index"),
     path(
         "twilio_handle_recording",
         twilio_handle_recording,

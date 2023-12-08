@@ -3,11 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>index</title>
+  <title>Rock Paper Scissors</title>
+  <style>
+    body { 
+      line-height: 1.4;
+        font-size: 16px;
+        padding: 0 10px;
+        margin: 50px auto;
+        max-width: 650px;
+    }
+
+    #maincontent {
+      max-width:42em;margin:15 auto;
+    }
+  </style>
 </head>
 <body>
 
-👀
+  <div id="maincontent">
+    <h1 style='font-weight: normal'>Rock Paper Scissors</h1>
+
+    <div style='font-size:4rem; text-align: center; margin-top: 80px;'>
+      {% if debug %}
+        DEV!!! <a href="tel:+18722393464">+1 872 239 3464</a>
+      {% else %}
+        <a href="tel:+18667625492">+1 866 762 5492</a>
+      {% endif %}
+    </div>
+
+    <div style='margin-top:70px; font-size: 0.9rem'>
+      <hr>
+      A game by {{authors|first|safe}} and {{authors|last|safe}}.
+    </div>
+
+  </div>
 
 </body>
 </html>
