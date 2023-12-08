@@ -39,7 +39,7 @@ def twilio_handle_round_result(request):
     if current_round.status == "tie":
         verbal_output = "it was a tie! good job."
     else:
-        if current_round.winner == request.call_session:
+        if current_round.winner_session == request.call_session:
             verbal_output = "you won! youu're amazing."
         else:
             verbal_output = "you lost! I'm sorry."
@@ -62,20 +62,20 @@ def twilio_handle_round_result(request):
 
 
 def compute_and_save_round_winner(round):
-    if round.player_1_move == round.player_2_move:
+    if round.player1_move == round.player2_move:
         round.status = "tie"
         round.save()
         return
 
     RPS = ["rock", "paper", "scissors"]
-    player1_rps = RPS.index(round.player_1_move)
-    player2_rps = RPS.index(round.player_2_move)
+    player1_rps = RPS.index(round.player1_move)
+    player2_rps = RPS.index(round.player2_move)
 
     round.status = "won"
     if player2_rps == (player1_rps + 1) % 3:
-        round.winner = round.player2
+        round.winner_session = round.player2_session
     elif player1_rps == (player2_rps + 1) % 3:
-        round.winner = round.player1
+        round.winner_session = round.player1_session
         return
     else:
         raise Exception("please never happen")
@@ -125,7 +125,7 @@ def twilio_handle_recording(request):
 
         try:
             interrupt_call_and_redirect_them_to_url(
-                call_sid=current_round.player1.call_sid,
+                call_sid=current_round.player1_session.call_sid,
                 redirect_url=f'{get_server_url()}{reverse("twilio_handle_round_result")}',
             )
         except:
@@ -134,7 +134,7 @@ def twilio_handle_recording(request):
 
         try:
             interrupt_call_and_redirect_them_to_url(
-                call_sid=current_round.player2.call_sid,
+                call_sid=current_round.player2_session.call_sid,
                 redirect_url=f'{get_server_url()}{reverse("twilio_handle_round_result")}',
             )
         except:
@@ -232,7 +232,7 @@ def handle_ringing(request):
 
         # create round
         Round.objects.create(
-            player1=request.call_session, player2=found_other_waiting_user
+            player1_session=request.call_session, player2=found_other_waiting_user
         )
 
         return HttpResponse(
