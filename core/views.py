@@ -1,4 +1,5 @@
 import random
+import time
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -14,6 +15,7 @@ from .utils_twilio import (
     is_the_call_still_around,
     try_interrupting_call_and_redirect_them_to_url,
 )
+from .utils_views import ping_pong_twilio_redirect_hack
 from .utils_wins_losses import generate_welcome_say_twiml_for_call_session
 
 HOLD_MUSIC = "http://com.twilio.music.guitars.s3.amazonaws.com/Pitx_-_Long_Winter.mp3"
@@ -184,7 +186,36 @@ def twilio_handle_game(request):
     raise Exception()
 
 
+# @csrf_exempt
+# def ping(request):
+#     print("ping")
+#     time.sleep(0.5)
+#     return HttpResponse(
+#         f"""<?xml version="1.0" encoding="UTF-8"?>
+#         <Response>
+#             <Redirect method="POST">{reverse("pong")}</Redirect>
+#         </Response>""".encode(
+#             "utf-8"
+#         )
+#     )
+
+
+# @csrf_exempt
+# def pong(request):
+#     print("pong")
+#     time.sleep(0.5)
+#     return HttpResponse(
+#         f"""<?xml version="1.0" encoding="UTF-8"?>
+#         <Response>
+#             <Redirect method="POST">{reverse("ping")}</Redirect>
+#         </Response>""".encode(
+#             "utf-8"
+#         )
+#     )
+
+
 @csrf_exempt
+@ping_pong_twilio_redirect_hack
 def put_user_in_waiting_queue(request):
     # we are looking to see if another user is waiting
     # to play -- if so, we'll connect the two users

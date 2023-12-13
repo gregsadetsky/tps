@@ -1,4 +1,5 @@
 import os
+import time
 
 from django.conf import settings
 from twilio.rest import Client
@@ -19,7 +20,11 @@ def try_interrupting_call_and_redirect_them_to_url(call_sid, redirect_url):
 
 def is_the_call_still_around(call_sid):
     try:
-        client.calls(call_sid).fetch()
+        for _ in range(20):
+            print("call_sid", call_sid)
+            call = client.calls(call_sid).fetch()
+            print("call.status", call.status)
+            time.sleep(0.5)
         return True
     except:
         return False
