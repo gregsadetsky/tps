@@ -102,6 +102,11 @@ def twilio_handle_recording(request):
         current_round.set_move_for_player(request.call_session, "scissors")
     else:
         # we didn't get that, ask the user to record again
+
+        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
+        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
+        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
+        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
         request.call_session.state = "rerecording"
         request.call_session.save()
 
@@ -238,7 +243,7 @@ def handle_ringing(request):
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                {generate_welcome_say_twiml_for_call_session(other_waiting_call_session)}
+                {generate_welcome_say_twiml_for_call_session(request.call_session)}
                 <Redirect method="POST">{reverse("twilio_handle_game")}</Redirect>
             </Response>""".encode(
                 "utf-8"

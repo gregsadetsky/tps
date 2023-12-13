@@ -1,5 +1,7 @@
 import hashlib
 
+from django.urls import resolve
+
 from core.models import CallerPerson, CallSession
 
 
@@ -8,6 +10,7 @@ def add_call_session_to_request(get_response):
     def middleware(request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
+        resolver_match = resolve(request.path_info)
 
         request.call_session = None
         if request.method == "POST" and request.POST.get("CallSid"):
@@ -26,6 +29,21 @@ def add_call_session_to_request(get_response):
                 )
                 call_session.caller_person = caller_person
                 call_session.save()
+            else:
+                # we know that the recording callback gets the Sid but not a From (just because)
+                if resolver_match.view_name != "twilio_handle_recording":
+                    raise Exception("ERRRRR Received CallSid but no From...!!!")
+
+        if request.POST.get("CallSid"):
+            assert (
+                request.call_session is not None
+            ), "caught a None request.call_session!!!"
+            print('request.POST.get("From")', request.POST.get("From"))
+
+            # fully refresh the session from the db
+            request.call_session = CallSession.objects.get(
+                call_sid=request.POST["CallSid"],
+            )
 
         response = get_response(request)
 
