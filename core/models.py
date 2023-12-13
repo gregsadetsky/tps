@@ -83,6 +83,14 @@ class Round(models.Model):
             raise Exception("invalid player session")
         self.save()
 
+    def get_the_other_players_session(self, player_session):
+        if player_session == self.player1_session:
+            return self.player2_session
+        elif player_session == self.player2_session:
+            return self.player1_session
+        else:
+            raise Exception("invalid player session")
+
     def __str__(self):
         return f"round - player1: {self.player1_move}, player2: {self.player2_move}"
 
@@ -98,12 +106,24 @@ class CallSession(models.Model):
 
     SESSION_STATE = [
         ("hungup", "hungup"),
+        ("being_welcomed", "being_welcomed"),
         ("waiting_for_other_player", "waiting_for_other_player"),
         ("started_game", "started_game"),
         ("rerecording", "rerecording"),
         ("waiting_for_transcript", "waiting_for_transcript"),
+        ("listening_to_results", "listening_to_results"),
     ]
     state = models.CharField(max_length=255, choices=SESSION_STATE)
+
+    # 'special' handler as there is a particular
+    # state transition that we never want to do --
+    # any 'hungup' calls should stay 'hungup' whatever
+    # happens.
+    def set_state(self, new_state):
+        if self.state == "hungup":
+            return
+        self.state = new_state
+        self.save()
 
     def get_latest_round(self):
         return (

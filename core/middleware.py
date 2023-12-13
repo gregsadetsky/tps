@@ -38,7 +38,6 @@ def add_call_session_to_request(get_response):
             assert (
                 request.call_session is not None
             ), "caught a None request.call_session!!!"
-            print('request.POST.get("From")', request.POST.get("From"))
 
             # fully refresh the session from the db
             request.call_session = CallSession.objects.get(
