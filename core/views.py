@@ -94,12 +94,8 @@ def twilio_handle_recording(request):
         request.call_session, recording_url
     )
 
-    if transcription == "rock":
-        current_round.set_move_for_player(request.call_session, "rock")
-    elif transcription == "paper":
-        current_round.set_move_for_player(request.call_session, "paper")
-    elif transcription == "scissors":
-        current_round.set_move_for_player(request.call_session, "scissors")
+    if transcription in { "rock", "paper", "scissors" }:
+        current_round.set_move_for_player(request.call_session, transcription)
     else:
         # we didn't get that, ask the user to record again
 
