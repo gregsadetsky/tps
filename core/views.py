@@ -79,6 +79,20 @@ def new_round_handler(request):
     if next_round_number == 3:
         return end_of_game_handler(request)
 
+    # check if the other player is still around - otherwise bail
+    if not is_the_call_still_around(
+        most_recent_round.get_the_other_players_session(request.call_session).call_sid
+    ):
+        return HttpResponse(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Say>the other player hung up, goodbye</Say>
+                <Hangup/>
+            </Response>""".encode(
+                "utf-8"
+            )
+        )
+
     # using get_or_create as it will only create a single object
     # thanks to primary keys
     Round.objects.get_or_create(
