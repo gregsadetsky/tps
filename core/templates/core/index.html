@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Talk Paper Scissors</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>">
   <style>
     body { 
       line-height: 1.4;
@@ -16,11 +18,21 @@
     #maincontent {
       max-width:42em;margin:15 auto;
     }
+
+    div.logoContainer {
+      text-align: center; 
+    }
+
+    img.logo {
+      width: 200px;
+    }
   </style>
 </head>
 <body>
 
   <div id="maincontent">
+    <div class='logoContainer'><img src="{% static 'core/images/rock-with-eyes.png' %}" class='logo'></div>
+    
     <h1 style='font-weight: normal'>Talk Paper Scissors</h1>
 
     <div style='font-size:4rem; text-align: center; margin-top: 80px;'>
