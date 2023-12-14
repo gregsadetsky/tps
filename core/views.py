@@ -186,8 +186,6 @@ def twilio_handle_recording(request):
     other_player_played = False
     is_transcription_valid = transcription in {"rock", "paper", "scissors"}
 
-    time.sleep(4)
-
     # yes, this will line is duplicated below.
     current_round = request.call_session.get_latest_round()
     with lock(f"round_{current_round.id}"):
