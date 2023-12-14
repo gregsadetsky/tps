@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from core.views import (
     announce_bad_news,
     index,
+    new_round_handler,
     put_user_in_waiting_queue,
     twilio_handle_game,
     twilio_handle_recording,
@@ -31,4 +32,5 @@ urlpatterns = [
         put_user_in_waiting_queue,
         name="put_user_in_waiting_queue",
     ),
+    path("new_round_handler", new_round_handler, name="new_round_handler"),
 ]

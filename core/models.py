@@ -17,6 +17,14 @@ class TranscriptionLogs(models.Model):
 
 
 class Round(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player1_session", "player2_session", "round_number"],
+                name="unique_rounds",
+            )
+        ]
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -26,6 +34,7 @@ class Round(models.Model):
     player2_session = models.ForeignKey(
         "CallSession", on_delete=models.PROTECT, related_name="player2_session"
     )
+    round_number = models.IntegerField()
 
     player1_move = models.CharField(max_length=255, null=True, blank=True)
     player2_move = models.CharField(max_length=255, null=True, blank=True)
@@ -151,3 +160,7 @@ class TwilioLog(models.Model):
 
     view_function = models.CharField(max_length=255)
     payload = models.JSONField()
+
+
+class ThreadSafe(models.Model):
+    key = models.CharField(max_length=80, unique=True)

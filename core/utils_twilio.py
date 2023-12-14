@@ -20,11 +20,7 @@ def try_interrupting_call_and_redirect_them_to_url(call_sid, redirect_url):
 
 def is_the_call_still_around(call_sid):
     try:
-        for _ in range(20):
-            print("call_sid", call_sid)
-            call = client.calls(call_sid).fetch()
-            print("call.status", call.status)
-            time.sleep(0.5)
-        return True
+        call = client.calls(call_sid).fetch()
+        return call.status != "completed"
     except:
         return False

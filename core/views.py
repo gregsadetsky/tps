@@ -15,7 +15,7 @@ from .utils_twilio import (
     is_the_call_still_around,
     try_interrupting_call_and_redirect_them_to_url,
 )
-from .utils_views import ping_pong_twilio_redirect_hack
+from .utils_views import lock, ping_pong_twilio_redirect_hack
 from .utils_wins_losses import generate_welcome_say_twiml_for_call_session
 
 HOLD_MUSIC = "http://com.twilio.music.guitars.s3.amazonaws.com/Pitx_-_Long_Winter.mp3"
@@ -33,6 +33,29 @@ def index(request):
     shuffled_authors = AUTHORS.copy()
     random.shuffle(shuffled_authors)
     return render(request, "core/index.html", {"authors": shuffled_authors})
+
+
+@csrf_exempt
+@ping_pong_twilio_redirect_hack
+def new_round_handler(request):
+    most_recent_round = request.call_session.get_latest_round()
+    next_round_number = int(request.GET["next_round_number"])
+
+    obj, created = Round.objects.get_or_create(
+        player1_session=most_recent_round.player1_session,
+        player2_session=most_recent_round.player2_session,
+        round_number=next_round_number,
+    )
+    print("obj", obj, "created", created)
+
+    return HttpResponse(
+        f"""<?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+        <Say>new game! how exciting</Say>
+        </Response>""".encode(
+            "utf-8"
+        )
+    )
 
 
 @csrf_exempt
@@ -58,6 +81,8 @@ def twilio_handle_round_result(request):
         request.call_session
     )
 
+    next_round_number = current_round.round_number + 1
+
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
     <Response>
@@ -65,6 +90,7 @@ def twilio_handle_round_result(request):
         <Say>they played</Say>
         <Play>{other_player_recording_url}</Play>
         <Say>{verbal_output}</Say>
+        <Redirect method="POST">{reverse("new_round_handler")}?next_round_number={next_round_number}</Redirect>
     </Response>""".encode(
             "utf-8"
         )
@@ -94,26 +120,42 @@ def compute_and_save_round_winner(round):
 @csrf_exempt
 @log_twilio_payload
 def twilio_handle_recording(request):
+    print(f"{request.call_session} twilio_handle_recording")
     recording_url = request.POST["RecordingUrl"]
-    transcription = transcribe_rps_from_url(recording_url)
+    try:
+        transcription = transcribe_rps_from_url(recording_url)
+    except:
+        transcription = "error"
 
     current_round = request.call_session.get_latest_round()
+    print(f"{request.call_session} current_round", current_round)
     assert current_round is not None
+    print(
+        f"{request.call_session} current_round.player1_session",
+        current_round.player1_session,
+    )
+    print(
+        f"{request.call_session} current_round.player2_session",
+        current_round.player2_session,
+    )
 
     current_round.store_recording_url_for_this_player(
         request.call_session, recording_url
     )
 
     if transcription in {"rock", "paper", "scissors"}:
+        print(f"{request.call_session} setting move for call_session")
         current_round.set_move_for_player(request.call_session, transcription)
     else:
         # we didn't get that, ask the user to record again
-
-        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
-        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
-        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
-        # FIXME the other person may have hung up at this point, so DON'T transition to rerecording, which mixes up things
         request.call_session.set_state("rerecording")
+
+        # is the other call still around?? it might not be;
+        # in that case, stop this recording handler from doing anything else
+        if not is_the_call_still_around(
+            current_round.get_the_other_players_session(request.call_session).call_sid
+        ):
+            return HttpResponse(b"ok")
 
         # interrupt this user's hold and send them back to twilio_handle_game
         try_interrupting_call_and_redirect_them_to_url(
@@ -122,6 +164,10 @@ def twilio_handle_recording(request):
         )
         return HttpResponse(b"ok")
 
+    print(
+        f"{request.call_session} current_round.has_other_player_played(request.call_session)",
+        current_round.has_other_player_played(request.call_session),
+    )
     if current_round.has_other_player_played(request.call_session):
         # 1. determine who won
         compute_and_save_round_winner(current_round)
@@ -186,34 +232,6 @@ def twilio_handle_game(request):
     raise Exception()
 
 
-# @csrf_exempt
-# def ping(request):
-#     print("ping")
-#     time.sleep(0.5)
-#     return HttpResponse(
-#         f"""<?xml version="1.0" encoding="UTF-8"?>
-#         <Response>
-#             <Redirect method="POST">{reverse("pong")}</Redirect>
-#         </Response>""".encode(
-#             "utf-8"
-#         )
-#     )
-
-
-# @csrf_exempt
-# def pong(request):
-#     print("pong")
-#     time.sleep(0.5)
-#     return HttpResponse(
-#         f"""<?xml version="1.0" encoding="UTF-8"?>
-#         <Response>
-#             <Redirect method="POST">{reverse("ping")}</Redirect>
-#         </Response>""".encode(
-#             "utf-8"
-#         )
-#     )
-
-
 @csrf_exempt
 @ping_pong_twilio_redirect_hack
 def put_user_in_waiting_queue(request):
@@ -222,25 +240,32 @@ def put_user_in_waiting_queue(request):
     # otherwise, put this user in waiting state
     # and ... say/play music..??
 
-    other_waiting_call_session = (
-        CallSession.objects.exclude(id=request.call_session.id)
-        .filter(state="waiting_for_other_player")
-        .order_by("?")
-        .first()
-    )
-
-    if not other_waiting_call_session:
-        request.call_session.set_state("waiting_for_other_player")
-
-        return HttpResponse(
-            f"""<?xml version="1.0" encoding="UTF-8"?>
-            <Response>
-                <Say>please wait for another player</Say>
-                <Play loop="100">{HOLD_MUSIC}</Play>
-            </Response>""".encode(
-                "utf-8"
-            )
+    print("put_user_in_waiting_queue BEFORE lock")
+    with lock("put_user_in_waiting_queue"):
+        print("put_user_in_waiting_queue BEEFORE-SLEEP")
+        time.sleep(3)
+        print("put_user_in_waiting_queue AFTER-SLEEP")
+        other_waiting_call_session = (
+            CallSession.objects.exclude(id=request.call_session.id)
+            .filter(state="waiting_for_other_player")
+            .order_by("?")
+            .first()
         )
+        print("put_user_in_waiting_queue AFTER-SLEEP")
+
+        print("other_waiting_call_session", other_waiting_call_session)
+        if not other_waiting_call_session:
+            request.call_session.set_state("waiting_for_other_player")
+
+            return HttpResponse(
+                f"""<?xml version="1.0" encoding="UTF-8"?>
+                <Response>
+                    <Say>please wait for another player</Say>
+                    <Play loop="100">{HOLD_MUSIC}</Play>
+                </Response>""".encode(
+                    "utf-8"
+                )
+            )
 
     # no actually there was another call!! let's go
     interrupt_was_successful = try_interrupting_call_and_redirect_them_to_url(
@@ -266,6 +291,7 @@ def put_user_in_waiting_queue(request):
     Round.objects.create(
         player1_session=request.call_session,
         player2_session=other_waiting_call_session,
+        round_number=0,
     )
 
     return HttpResponse(
