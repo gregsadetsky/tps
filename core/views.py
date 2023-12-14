@@ -203,6 +203,11 @@ def twilio_handle_recording(request):
         request.call_session, recording_url
     )
 
+    if is_transcription_valid:
+        # reset incorrect transcripts
+        request.call_session.number_of_incorrect_transcripts = 0
+        request.call_session.save()
+
     if not is_transcription_valid:
         # we didn't get that, ask the user to record again
         request.call_session.set_state("rerecording")
@@ -257,6 +262,22 @@ def twilio_handle_game(request):
             )
         )
     elif request.call_session.state == "rerecording":
+        if request.call_session.number_of_incorrect_transcripts == 3:
+            # assume that something is not working - either the player
+            # is messing with us/the other player, or their line just doesn't work.
+            # hang up this user and that will also lead the other player to be hung up
+            # in the hungup handler
+            return HttpResponse(
+                b"""<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Say>we're sorry, we could not understand you, goodbye</Say>
+                <Hangup/>
+            </Response>"""
+            )
+
+        request.call_session.number_of_incorrect_transcripts += 1
+        request.call_session.save()
+
         request.call_session.set_state("waiting_for_transcript")
 
         return HttpResponse(

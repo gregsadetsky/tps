@@ -124,6 +124,8 @@ class CallSession(models.Model):
     ]
     state = models.CharField(max_length=255, choices=SESSION_STATE, db_index=True)
 
+    number_of_incorrect_transcripts = models.IntegerField(default=0)
+
     # 'special' handler as there is a particular
     # state transition that we never want to do --
     # any 'hungup' calls should stay 'hungup' whatever
