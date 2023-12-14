@@ -308,7 +308,9 @@ def put_user_in_waiting_queue(request):
                 f"""<?xml version="1.0" encoding="UTF-8"?>
                 <Response>
                     <Say>please wait for another player</Say>
-                    <Play loop="100">{HOLD_MUSIC}</Play>
+                    <Play loop="1">{HOLD_MUSIC}</Play>
+                    <Say>we're sorry, we could not find another player</Say>
+                    <Hangup/>
                 </Response>""".encode(
                     "utf-8"
                 )

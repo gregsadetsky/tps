@@ -31,7 +31,6 @@ def transcribe_rps_from_url(url):
                 file=fp,
                 prompt="ROCK, PAPER, SCISSORS",
             )
-            print("transcript", transcript)
 
     TranscriptionLogs.objects.create(transcript=transcript.text)
     return re.sub(r"\W+", "", transcript.text.lower().strip())
