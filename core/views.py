@@ -199,9 +199,9 @@ def twilio_handle_recording(request):
             request.call_session
         )
 
-    current_round.store_recording_url_for_this_player(
-        request.call_session, recording_url
-    )
+        current_round.store_recording_url_for_this_player(
+            request.call_session, recording_url
+        )
 
     if is_transcription_valid:
         # reset incorrect transcripts

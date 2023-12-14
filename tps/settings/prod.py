@@ -6,3 +6,10 @@ from .base import *
 LOGGING["handlers"]["console"] = {
     "class": "logging.StreamHandler",
 }
+
+# conn_max_age makes sense for prod! AND DOES NOT FOR DEV!
+DATABASES = {
+    "default": dj_database_url.config(
+        conn_max_age=600,
+    )
+}
