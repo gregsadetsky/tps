@@ -122,7 +122,7 @@ class CallSession(models.Model):
         ("waiting_for_transcript", "waiting_for_transcript"),
         ("listening_to_results", "listening_to_results"),
     ]
-    state = models.CharField(max_length=255, choices=SESSION_STATE)
+    state = models.CharField(max_length=255, choices=SESSION_STATE, db_index=True)
 
     # 'special' handler as there is a particular
     # state transition that we never want to do --
