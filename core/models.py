@@ -163,4 +163,4 @@ class TwilioLog(models.Model):
 
 
 class ThreadSafe(models.Model):
-    key = models.CharField(max_length=80, unique=True)
+    key = models.CharField(max_length=255, unique=True)

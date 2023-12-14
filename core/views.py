@@ -178,22 +178,34 @@ def compute_and_save_round_winner(round):
 def twilio_handle_recording(request):
     recording_url = request.POST["RecordingUrl"]
     try:
-        print("transcribe_rps_from_url before")
         transcription = transcribe_rps_from_url(recording_url)
     except:
         transcription = "error"
-    print("transcribe_rps_from_url after")
 
+    # this value will be fetched within a lock
+    other_player_played = False
+    is_transcription_valid = transcription in {"rock", "paper", "scissors"}
+
+    time.sleep(4)
+
+    # yes, this will line is duplicated below.
     current_round = request.call_session.get_latest_round()
-    assert current_round is not None
+    with lock(f"round_{current_round.id}"):
+        # this, this line is duplicate above.
+        current_round = request.call_session.get_latest_round()
+        assert current_round is not None
+
+        if is_transcription_valid:
+            current_round.set_move_for_player(request.call_session, transcription)
+        other_player_played = current_round.has_other_player_played(
+            request.call_session
+        )
 
     current_round.store_recording_url_for_this_player(
         request.call_session, recording_url
     )
 
-    if transcription in {"rock", "paper", "scissors"}:
-        current_round.set_move_for_player(request.call_session, transcription)
-    else:
+    if not is_transcription_valid:
         # we didn't get that, ask the user to record again
         request.call_session.set_state("rerecording")
 
@@ -211,7 +223,7 @@ def twilio_handle_recording(request):
         )
         return HttpResponse(b"ok")
 
-    if current_round.has_other_player_played(request.call_session):
+    if other_player_played:
         # 1. determine who won
         compute_and_save_round_winner(current_round)
 
