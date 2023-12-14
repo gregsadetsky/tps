@@ -178,9 +178,11 @@ def compute_and_save_round_winner(round):
 def twilio_handle_recording(request):
     recording_url = request.POST["RecordingUrl"]
     try:
+        print("transcribe_rps_from_url before")
         transcription = transcribe_rps_from_url(recording_url)
     except:
         transcription = "error"
+    print("transcribe_rps_from_url after")
 
     current_round = request.call_session.get_latest_round()
     assert current_round is not None

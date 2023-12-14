@@ -2,26 +2,18 @@ import re
 import tempfile
 from pathlib import Path
 
+import httpx
 import requests
 from django.conf import settings
 from openai import OpenAI
 
 from core.models import TranscriptionLogs
 
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-# FIXME test and try retries??????
-client = OpenAI(api_key=settings.OPENAI_KEY, timeout=10)
+client = OpenAI(
+    api_key=settings.OPENAI_KEY,
+    timeout=httpx.Timeout(10.0, connect=5.0),
+    max_retries=3,
+)
 
 
 def transcribe_rps_from_url(url):
@@ -34,11 +26,13 @@ def transcribe_rps_from_url(url):
             fp.write(response.content)
 
         with open(audio_file_path, "rb") as fp:
+            print("before client.audio.transcriptions.create")
             transcript = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=fp,
                 prompt="ROCK, PAPER, SCISSORS",
             )
+            print("after client.audio.transcriptions.create")
 
     TranscriptionLogs.objects.create(transcript=transcript.text)
     return re.sub(r"\W+", "", transcript.text.lower().strip())
