@@ -16,7 +16,10 @@ from .utils_twilio import (
     try_interrupting_call_and_redirect_them_to_url,
 )
 from .utils_views import lock, ping_pong_twilio_redirect_hack
-from .utils_wins_losses import generate_welcome_say_twiml_for_call_session
+from .utils_wins_losses import (
+    generate_welcome_say_twiml_for_call_session,
+    get_wins_losses_and_ties_for_call_session,
+)
 
 HOLD_MUSIC = "http://com.twilio.music.guitars.s3.amazonaws.com/Pitx_-_Long_Winter.mp3"
 AUTHORS = [
@@ -36,21 +39,61 @@ def index(request):
 
 
 @csrf_exempt
+def end_of_game_handler(request):
+    # get all of the rounds for this caller session
+    # compute the score
+    # and say goodbye
+
+    wins_losses_and_ties = get_wins_losses_and_ties_for_call_session(
+        request.call_session
+    )
+    total_score = wins_losses_and_ties["wins"] - wins_losses_and_ties["losses"]
+
+    final_result_str = ""
+    if total_score == 0:
+        final_result_str = "tied"
+    elif total_score > 0:
+        final_result_str = "won"
+    else:
+        final_result_str = "lost"
+
+    return HttpResponse(
+        f"""<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Say>Your final score is: {total_score}</Say>
+            <Say>You {final_result_str}</Say>
+            <Say>Goodbye!</Say>
+            <Hangup/>
+        </Response>""".encode(
+            "utf-8"
+        )
+    )
+
+
+@csrf_exempt
 @ping_pong_twilio_redirect_hack
 def new_round_handler(request):
     most_recent_round = request.call_session.get_latest_round()
     next_round_number = int(request.GET["next_round_number"])
 
-    obj, created = Round.objects.get_or_create(
+    if next_round_number == 3:
+        return end_of_game_handler(request)
+
+    # using get_or_create as it will only create a single object
+    # thanks to primary keys
+    Round.objects.get_or_create(
         player1_session=most_recent_round.player1_session,
         player2_session=most_recent_round.player2_session,
         round_number=next_round_number,
     )
 
+    request.call_session.set_state("started_round")
+
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>
-    <Response>
-        <Say>new game! how exciting</Say>
+        <Response>
+            <Say>Round {next_round_number+1}!</Say>
+            <Redirect method="POST">{reverse("twilio_handle_game")}</Redirect>
         </Response>""".encode(
             "utf-8"
         )
@@ -69,12 +112,12 @@ def twilio_handle_round_result(request):
 
     verbal_output = ""
     if current_round.status == "tie":
-        verbal_output = "it was a tie! good job."
+        verbal_output = "the round was a tie!"
     else:
         if current_round.winner_session == request.call_session:
-            verbal_output = "you won! you're amazing."
+            verbal_output = "you won the round!"
         else:
-            verbal_output = "you lost! I'm sorry."
+            verbal_output = "you lost the round!"
 
     other_player_recording_url = current_round.get_recording_url_for_other_player(
         request.call_session
@@ -174,13 +217,13 @@ def twilio_handle_recording(request):
 @csrf_exempt
 @log_twilio_payload
 def twilio_handle_game(request):
-    if request.call_session.state == "started_game":
+    if request.call_session.state == "started_round":
         request.call_session.set_state("waiting_for_transcript")
 
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Say>please say rock, papers or scissors</Say>
+                <Say>please say rock, paper or scissors</Say>
                 <Record timeout="2" maxLength="3" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
@@ -193,7 +236,7 @@ def twilio_handle_game(request):
         return HttpResponse(
             f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Say>we didn't quite hear that, please say rock, papers or scissors</Say>
+                <Say>we didn't quite hear that, please say rock, paper or scissors</Say>
                 <Record timeout="2" maxLength="3" playBeep="true" recordingStatusCallback="{reverse('twilio_handle_recording')}" />
             </Response>
         """.encode(
@@ -262,8 +305,8 @@ def put_user_in_waiting_queue(request):
         )
 
     # we assume that we interrupted the other player successfully, continue
-    request.call_session.set_state("started_game")
-    other_waiting_call_session.set_state("started_game")
+    request.call_session.set_state("started_round")
+    other_waiting_call_session.set_state("started_round")
 
     # create round
     Round.objects.create(

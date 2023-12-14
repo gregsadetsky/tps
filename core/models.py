@@ -117,7 +117,7 @@ class CallSession(models.Model):
         ("hungup", "hungup"),
         ("being_welcomed", "being_welcomed"),
         ("waiting_for_other_player", "waiting_for_other_player"),
-        ("started_game", "started_game"),
+        ("started_round", "started_round"),
         ("rerecording", "rerecording"),
         ("waiting_for_transcript", "waiting_for_transcript"),
         ("listening_to_results", "listening_to_results"),

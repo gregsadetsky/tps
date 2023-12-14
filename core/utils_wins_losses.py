@@ -26,6 +26,31 @@ def generate_welcome_say_twiml_for_call_session(call_session):
     return f"""<Say>Welcome to Talk Paper Scissors! You have {wins_losses_and_ties["wins"]} {wins_str}, {wins_losses_and_ties["losses"]} {losses_str}, and {wins_losses_and_ties["ties"]} {ties_str}.</Say>"""
 
 
+def get_wins_losses_and_ties_for_call_session(call_session):
+    # since this function is used in models, avoid circular import
+    from core.models import Round
+
+    wins = 0
+    losses = 0
+    ties = 0
+
+    # get all rounds where this call_session was a player,
+    # and the round was won, and the winner was set
+    for round_obj in Round.objects.filter(
+        (Q(player1_session=call_session) | Q(player2_session=call_session)),
+        (Q(status="won") | Q(status="tie")),
+    ):
+        if round_obj.status == "won" and round_obj.winner_session:
+            if round_obj.winner_session == call_session:
+                wins += 1
+            else:
+                losses += 1
+        elif round_obj.status == "tie":
+            ties += 1
+
+    return {"wins": wins, "losses": losses, "ties": ties}
+
+
 def get_wins_losses_and_ties_for_caller_person_obj(caller_person_obj):
     # since this function is used in models, avoid circular import
     from core.models import Round
