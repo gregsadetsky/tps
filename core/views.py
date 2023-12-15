@@ -262,7 +262,7 @@ def twilio_handle_game(request):
             )
         )
     elif request.call_session.state == "rerecording":
-        if request.call_session.number_of_incorrect_transcripts == 3:
+        if request.call_session.number_of_incorrect_transcripts == 4:
             # assume that something is not working - either the player
             # is messing with us/the other player, or their line just doesn't work.
             # hang up this user and that will also lead the other player to be hung up
@@ -303,7 +303,7 @@ def twilio_handle_game(request):
         )
 
     # otherwise should never happen
-    raise Exception()
+    raise Exception(f"unexpected state!!! >>> {request.call_session.state}")
 
 
 @csrf_exempt
