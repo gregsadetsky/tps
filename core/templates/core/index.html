@@ -53,6 +53,14 @@
     img.logo {
       width: 400px;
     }
+
+    a.telephone {
+      text-decoration-color: rgba(0,0,0,0.2);
+      text-decoration-thickness: 5%;
+      text-decoration-style: dashed;
+      text-underline-offset: 5px;
+      color: black;
+    }
   </style>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -115,7 +123,7 @@
       
       <input type="submit" value="subscribe" style="
           position: absolute;
-          top: 185px;
+          top: 180px;
           left: 270px;
           border-radius: 10px;
           cursor: pointer;
@@ -134,19 +142,29 @@
     
     <div style="margin-top:50px;">
       <p style="margin:0 auto;">
-        aoidjhaiuosdh aiouhd asiufh aiosfuh asoifh aiusfh asiugfbh aofg aosifh gaiushf aiugf aiughf aisf
+        Play rock paper scissors over the phone with strangers. To get started call this number:
       </p>
     </div>
 
-    <div style='font-size:3rem; text-align: center; margin-top: 50px;'>
+    <div style='font-size:3rem; text-align: center; margin-top: 30px;'>
       {% if debug %}
-        DEV!!! <a href="tel:+18722393464">+1 872 239 3464</a>
+        DEV!!! <a href="tel:+18722393464" class='telephone'>+1 872 239 3464</a>
       {% else %}
-        <a href="tel:+18667625492">+1 866 762 5492</a>
+        <a href="tel:+18667625492" class='telephone' style=''>+1 866 762 5492</a>
       {% endif %}
     </div>
+    <div style='text-align: center;'>
+      <span style="font-size:0.9rem;color:grey"><i>(not in the US? you can call <a href="tel:+15157625762" class='telephone' style='text-underline-offset: 3px;color:grey;'>+1 515 762 5762</a> but beware charges!)</i></span>
+    </div>
 
-    <div style='margin-top:70px; font-size: 0.9rem'>
+    <div style="margin-top:30px;">
+      <p style="margin:0 auto;">
+        You'll be paired with a stranger and prompted to say rock paper or scissors. You'll be asked to repeat yourself if you say anything else. Then you'll hear what they said.<br/><br/>
+        Each game is 3 rounds. Your record is tracked across games.
+      </p>
+    </div>
+
+    <div style='margin-top:30px; font-size: 0.9rem'>
       <hr>
       A game by {{authors|first|safe}} and {{authors|last|safe}}.
     </div>
