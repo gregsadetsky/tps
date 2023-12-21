@@ -24,7 +24,7 @@
   <meta name="theme-color" content="#ffffff">
 
   <title>Talk Paper Scissors</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>">
+
   <script data-goatcounter="https://talkpaperscissors.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
   <style>
@@ -54,6 +54,44 @@
       width: 400px;
     }
   </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var form = document.querySelector("form");
+
+      function sayThanks() {
+        var submitButton = document.querySelector('input[type="submit"]')
+        submitButton.value = 'thanks'
+        setTimeout(function() {
+          submitButton.value = 'subscribe'
+        }, 2000);
+
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+        var data = new FormData(event.target);
+        fetch(event.target.action, {
+          method: form.method,
+          body: data,
+          headers: {
+            'Accept': 'application/json'
+        }
+        }).then(response => {
+          if (response.ok) {
+            form.reset()
+            sayThanks();
+          } else {
+            response.json().then(data => {
+              sayThanks();
+          })
+        }
+        }).catch(error => {
+          sayThanks();
+        });
+      }
+      form.addEventListener("submit", handleSubmit)
+    });
+  </script>
 </head>
 <body>
 
@@ -64,7 +102,8 @@
 
       <img src="/talkpaperscissors.png" class='logo'>
 
-      <input type="email" style="
+      <form action="https://formspree.io/f/mjvnbaja" method="POST">
+      <input type="email" name="email" style="
           position: absolute;
           top: 180px;
           left: 110px;
