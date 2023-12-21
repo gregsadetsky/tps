@@ -338,6 +338,16 @@ def put_user_in_waiting_queue(request):
             )
 
     # no actually there was another call!! let's go
+    request.call_session.set_state("started_round")
+    other_waiting_call_session.set_state("started_round")
+
+    # create round
+    Round.objects.create(
+        player1_session=request.call_session,
+        player2_session=other_waiting_call_session,
+        round_number=0,
+    )
+
     interrupt_was_successful = try_interrupting_call_and_redirect_them_to_url(
         call_sid=other_waiting_call_session.call_sid,
         redirect_url=f'{get_server_url()}{reverse("twilio_handle_game")}',
@@ -354,15 +364,6 @@ def put_user_in_waiting_queue(request):
         )
 
     # we assume that we interrupted the other player successfully, continue
-    request.call_session.set_state("started_round")
-    other_waiting_call_session.set_state("started_round")
-
-    # create round
-    Round.objects.create(
-        player1_session=request.call_session,
-        player2_session=other_waiting_call_session,
-        round_number=0,
-    )
 
     return HttpResponse(
         f"""<?xml version="1.0" encoding="UTF-8"?>

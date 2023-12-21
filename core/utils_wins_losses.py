@@ -23,7 +23,7 @@ def generate_welcome_say_twiml_for_call_session(call_session):
     wins_str = "wins" if wins_losses_and_ties["wins"] != 1 else "win"
     losses_str = "losses" if wins_losses_and_ties["losses"] != 1 else "loss"
     ties_str = "ties" if wins_losses_and_ties["ties"] != 1 else "tie"
-    return f"""<Say>Welcome to Talk Paper Scissors! You have {wins_losses_and_ties["wins"]} {wins_str}, {wins_losses_and_ties["losses"]} {losses_str}, and {wins_losses_and_ties["ties"]} {ties_str}.</Say>"""
+    return f"""<Say>Welcome! This is Talk Paper Scissors! You have {wins_losses_and_ties["wins"]} {wins_str}, {wins_losses_and_ties["losses"]} {losses_str}, and {wins_losses_and_ties["ties"]} {ties_str}.</Say>"""
 
 
 def get_wins_losses_and_ties_for_call_session(call_session):
