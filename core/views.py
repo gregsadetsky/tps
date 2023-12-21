@@ -1,5 +1,5 @@
+import datetime
 import random
-import time
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -325,10 +325,26 @@ def put_user_in_waiting_queue(request):
         if not other_waiting_call_session:
             request.call_session.set_state("waiting_for_other_player")
 
+            recent_call_session_message = ""
+            nmb_recent_call_sessions = (
+                CallSession.objects.filter(
+                    # get all sessions more recent than 5 minutes ago
+                    created__gte=(
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - datetime.timedelta(minutes=5)
+                    ),
+                ).count()
+                - 1
+            )
+            if nmb_recent_call_sessions > 50:
+                recent_call_session_message = "\n<Say>more than 50 people have played in the last 5 minutes.</Say>"
+            elif nmb_recent_call_sessions > 0:
+                recent_call_session_message = f"\n<Say>{nmb_recent_call_sessions} people have played in the last 5 minutes.</Say>"
+
             return HttpResponse(
                 f"""<?xml version="1.0" encoding="UTF-8"?>
                 <Response>
-                    <Say>please wait for another player</Say>
+                    <Say>please wait for another player</Say>{recent_call_session_message}
                     <Play loop="1">{HOLD_MUSIC}</Play>
                     <Say>we're sorry, we could not find another player</Say>
                     <Hangup/>

@@ -112,7 +112,6 @@ STORAGES = {
     },
 }
 WHITENOISE_ROOT = BASE_DIR / "static_root"
-print("WHITENOISE_ROOT", WHITENOISE_ROOT)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

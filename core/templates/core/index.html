@@ -60,10 +60,18 @@
       text-decoration-style: dashed;
       text-underline-offset: 5px;
       color: black;
+      font-family: monospace;
     }
   </style>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
+      document.querySelector('#js-main-telephone').addEventListener('mouseover', function() {
+        this.innerHTML = '+1 515 ROCK ROC';
+      });
+      document.querySelector('#js-main-telephone').addEventListener('mouseout', function() {
+        this.innerHTML = '+1 515 762 5762';
+      });      
+
       var form = document.querySelector("form");
 
       function sayThanks() {
@@ -146,15 +154,11 @@
       </p>
     </div>
 
-    <div style='font-size:3rem; text-align: center; margin-top: 30px;'>
-      {% if debug %}
-        DEV!!! <a href="tel:+18722393464" class='telephone'>+1 872 239 3464</a>
-      {% else %}
-        <a href="tel:+18667625492" class='telephone' style=''>+1 866 762 5492</a>
-      {% endif %}
+    <div style='font-size:2.5rem; text-align: center; margin-top: 30px;'>
+      <a href="tel:+15157625762" class='telephone' id='js-main-telephone'>+1 515 762 5762</a>
     </div>
     <div style='text-align: center;'>
-      <span style="font-size:0.9rem;color:grey"><i>(not in the US? you can call <a href="tel:+15157625762" class='telephone' style='text-underline-offset: 3px;color:grey;'>+1 515 762 5762</a> but beware charges!)</i></span>
+      <span style="font-size:0.9rem;color:grey"><i>(US number; you can call from abroad but beware charges!)</i></span>
     </div>
 
     <div style="margin-top:30px;">
