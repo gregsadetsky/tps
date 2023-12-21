@@ -4,40 +4,94 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="talk paper scissors">
+  <meta property="og:description" content="play rock paper scissors live over the phone with strangers">
+  <meta property="og:url" content="https://talkpaperscissors.com">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://talkpaperscissors.com/talkpaperscissors.png">
+  <meta name="twitter:title" content="talk paper scissors">
+  <meta name="twitter:description" content="play rock paper scissors live over the phone with strangers">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://talkpaperscissors.com/talkpaperscissors.png">
+
   <title>Talk Paper Scissors</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>">
   <script data-goatcounter="https://talkpaperscissors.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
     body { 
       line-height: 1.4;
         font-size: 16px;
         padding: 0 10px;
-        margin: 50px auto;
+        margin: 20px auto;
         max-width: 650px;
     }
 
     #maincontent {
-      max-width:42em;margin:15 auto;
+      max-width:400px;
+      margin:0 auto;
     }
 
     div.logoContainer {
-      text-align: center; 
+      text-align: center;
+      position: relative;
     }
 
     img.logo {
-      width: 200px;
+      width: 400px;
     }
   </style>
 </head>
 <body>
 
   <div id="maincontent">
-    <div class='logoContainer'><img src="{% static 'core/images/rock-with-eyes.png' %}" class='logo'></div>
-    
-    <h1 style='font-weight: normal'>Talk Paper Scissors</h1>
+    <h1 style='font-weight: normal; margin-top: 0; margin-bottom:30px;'>Talk Paper Scissors</h1>
 
-    <div style='font-size:4rem; text-align: center; margin-top: 80px;'>
+    <div class='logoContainer'>
+
+      <img src="/talkpaperscissors.png" class='logo'>
+
+      <input type="email" style="
+          position: absolute;
+          top: 180px;
+          left: 110px;
+          border-radius: 8px;
+          border: 0;
+          box-shadow: 5px 5px 10px black;
+          width: 140px;
+      " autofocus="" placeholder="you@gmail.com">
+      
+      <input type="submit" value="subscribe" style="
+          position: absolute;
+          top: 185px;
+          left: 270px;
+          border-radius: 10px;
+          cursor: pointer;
+      ">
+
+      <button style="
+      margin-top: 20px;
+          font-size: 21px;
+          color: black;
+          border-radius: 32px;
+          background: white;
+          box-shadow: 1px 1px 50px black;
+          /* border: 0; */
+      " disabled="">☝️☝️ GET UPDATES ☝️☝️</button>
+    </div>
+    
+    <div style="margin-top:50px;">
+      <p style="margin:0 auto;">
+        aoidjhaiuosdh aiouhd asiufh aiosfuh asoifh aiusfh asiugfbh aofg aosifh gaiushf aiugf aiughf aisf
+      </p>
+    </div>
+
+    <div style='font-size:3rem; text-align: center; margin-top: 50px;'>
       {% if debug %}
         DEV!!! <a href="tel:+18722393464">+1 872 239 3464</a>
       {% else %}
