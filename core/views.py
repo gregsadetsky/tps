@@ -437,3 +437,7 @@ def twilio_webhook(request):
         return handle_hangup(request)
 
     return HttpResponse(b"ok")
+
+
+def synthetic_exception(request):
+    raise Exception("this is a synthetic exception")
