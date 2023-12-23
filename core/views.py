@@ -1,6 +1,7 @@
 import datetime
 import random
 
+from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -457,3 +458,43 @@ def twilio_webhook(request):
 
 def synthetic_exception(request):
     raise Exception("this is a synthetic exception")
+
+
+def dashboard(request):
+    def get_count_of_states(query):
+        all_counts_by_state = query.values("state").annotate(count=Count("state"))
+        state_count_dict = {x["state"]: x["count"] for x in all_counts_by_state}
+        # alpha order the keys and return as list
+        out = [["TOTAL", sum(state_count_dict.values())]]
+        out += sorted(state_count_dict.items())
+        return out
+
+    total_call_session_states = get_count_of_states(CallSession.objects.all())
+
+    last_30m_call_sessions = get_count_of_states(
+        CallSession.objects.filter(
+            created__gte=(
+                datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(minutes=30)
+            )
+        )
+    )
+
+    last_2m_call_sessions = get_count_of_states(
+        CallSession.objects.filter(
+            created__gte=(
+                datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(minutes=2)
+            )
+        )
+    )
+
+    return render(
+        request,
+        "core/dashboard.html",
+        {
+            "total_call_session_states": total_call_session_states,
+            "last_30m_call_sessions": last_30m_call_sessions,
+            "last_2m_call_sessions": last_2m_call_sessions,
+        },
+    )

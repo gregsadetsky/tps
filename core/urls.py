@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 
 from core.views import (
     announce_bad_news,
+    dashboard,
     index,
     new_round_handler,
     put_user_in_waiting_queue,
@@ -35,4 +36,5 @@ urlpatterns = [
     ),
     path("new_round_handler", new_round_handler, name="new_round_handler"),
     path("_GREG__exception__NOLEN_", synthetic_exception, name="synthetic_exception"),
+    path("33a566f1/dashboard", dashboard, name="dashboard"),
 ]

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+</head>
+<body>
+  <h2>LAST 2 MINS </h2>
+  {% for state, value in last_2m_call_sessions %}
+    {{ state }}: {{ value }}<br>
+  {% endfor %}
+
+  <br/>
+
+  <h2>LAST 30 MINS</h2>
+  {% for state, value in last_30m_call_sessions %}
+    {{ state }}: {{ value }}<br>
+  {% endfor %}
+
+  <br/>
+
+  <h2>TOTAL</h2>
+  {% for state, value in total_call_session_states %}
+    {{ state }}: {{ value }}<br>
+  {% endfor %}
+</body>
+</html>
