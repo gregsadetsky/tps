@@ -456,10 +456,6 @@ def twilio_webhook(request):
     return HttpResponse(b"ok")
 
 
-def synthetic_exception(request):
-    raise Exception("this is a synthetic exception")
-
-
 def dashboard(request):
     def get_count_of_states(query):
         all_counts_by_state = query.values("state").annotate(count=Count("state"))

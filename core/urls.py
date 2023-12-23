@@ -7,7 +7,6 @@ from core.views import (
     index,
     new_round_handler,
     put_user_in_waiting_queue,
-    synthetic_exception,
     twilio_handle_game,
     twilio_handle_recording,
     twilio_handle_round_result,
@@ -35,6 +34,5 @@ urlpatterns = [
         name="put_user_in_waiting_queue",
     ),
     path("new_round_handler", new_round_handler, name="new_round_handler"),
-    path("_GREG__exception__NOLEN_", synthetic_exception, name="synthetic_exception"),
     path("33a566f1/dashboard", dashboard, name="dashboard"),
 ]
