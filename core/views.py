@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from core.models import CallSession, Round
 
-from .utils_logging import log_twilio_payload
 from .utils_server_url import get_server_url
 from .utils_speechrec import transcribe_rps_from_url
 from .utils_twilio import (
@@ -116,7 +115,6 @@ def new_round_handler(request):
 
 
 @csrf_exempt
-@log_twilio_payload
 def twilio_handle_round_result(request):
     current_round = request.call_session.get_latest_round()
     assert current_round is not None
@@ -175,7 +173,6 @@ def compute_and_save_round_winner(round):
 
 
 @csrf_exempt
-@log_twilio_payload
 def twilio_handle_recording(request):
     recording_url = request.POST["RecordingUrl"]
     try:
@@ -247,7 +244,6 @@ def twilio_handle_recording(request):
 
 
 @csrf_exempt
-@log_twilio_payload
 def twilio_handle_game(request):
     if request.call_session.state == "started_round":
         request.call_session.set_state("waiting_for_transcript")
@@ -442,7 +438,6 @@ def handle_hangup(request):
 
 
 @csrf_exempt
-@log_twilio_payload
 def twilio_webhook(request):
     assert request.POST.get("CallStatus")
     call_status = request.POST["CallStatus"]
